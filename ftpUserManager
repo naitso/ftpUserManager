@@ -1,0 +1,99 @@
+#!/bin/bash
+#
+# more info at http://download.pureftpd.org/pub/pure-ftpd/doc/README.Virtual-Users
+#
+# Set FTP home path, where all users are be stored
+FTPHOME=/var/www/
+clear 
+
+if [[ -e `which pure-pw 2> /dev/null` ]]; then
+
+
+while [ R1 != "0" ]
+do
+clear
+echo "MANAGE PURE-FTPD'S VIRTUAL USERS"
+echo ""
+echo "a) Create a virtual user"
+echo "b) Change user's info, like disk quota or number of files allowed"
+echo "c) Change user's password"
+echo "d) Delete user"
+echo "e) Show a list of all users"
+echo "f) Show the user's detail"
+echo "q) Quit"
+read R1
+
+#clear
+case "$R1" in 
+	a | A )
+	# CREATE USER
+	clear
+	echo "Enter username"
+	read FTPUSER
+	echo "Enter password"
+	read FTPASSWD
+	echo "$FTPASSWD" > ./pure-ftpd-passwd
+	echo "$FTPASSWD" >> ./pure-ftpd-passwd
+	pure-pw useradd $FTPUSER -u ftpuser -d $FTPHOME$FTPUSER -y 3 -n 10000 -N 500 -m < ./pure-ftpd-passwd
+	rm ./pure-ftpd-passwd
+	clear
+	echo "User created"
+	echo "to change disk quote for this user use option b" 
+	echo "default is 500Mb"
+	;;
+	b | B )
+	clear
+	echo "Enter username to change settings"
+	read LOGINUSER
+	echo "Set the max number of files that the user can upload"
+	read NRFILES
+	echo "Set new disk quota, the value must be in MB"
+	read USERQUOTA
+	echo "Set new path for home, by default $FTPHOME$LOGINUSER"
+	read USERHOME
+	pure-pw usermod $LOGINUSER -n $NRFILES -N $USERQUOTA -d $USERHOME -m
+	echo "User's info are been updated"
+	sleep 2	
+	;;
+	c | C )
+	clear
+	echo "Enter username to update password"
+	read LOGINUSER
+	echo "Enter new password"
+	read CHANGEPASSWD
+	echo "$CHANGEPASSWD" >> ./pure-ftpd-passwd-change
+	echo "$CHANGEPASSWD" >> ./pure-ftpd-passwd-change
+	pure-pw passwd $LOGINUSER -m < ./pure-ftpd-passwd-change
+	rm ./pure-ftpd-passwd-change
+	;;
+	d | D )
+	clear
+	echo "Enter the username to be removed"
+	read DELUSER 
+	pure-pw userdel $DELUSER -m
+	;;
+	e | E )
+	clear
+	pure-pw list
+	;;
+	f | F )
+	clear
+	echo "Enter the username to show more info"
+	read USERINFO
+	pure-pw show $USERINFO
+	;;
+	q | Q )
+	echo "Quit"
+	exit 0
+	;;
+	* ) clear
+	echo "Enter only a, b, c, d, e, f o q to quit"
+	sleep 2
+esac
+echo "press ENTER to return at the menu"
+read key
+done
+exit 0
+	else 
+		echo "No pure-pw command was found on your system, please check if is installed and then retry."
+fi
